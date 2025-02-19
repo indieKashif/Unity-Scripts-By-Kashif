@@ -46,8 +46,8 @@ namespace MoreMountains.CorgiEngine
 
         private bool isSprinting = false;  // Keeps track of whether the player is sprinting or not
         // References to the on/off toggle images
-        public GameObject runOnImage;    // Image when sprinting is on
-        public GameObject runOffImage;   // Image when sprinting is off
+        public GameObject sprintActiveImage;  // Sprint ON // Image when sprinting is on
+        public GameObject sprintInactiveImage; // Sprint OFF // Image when sprinting is off
 
 
 
@@ -167,6 +167,15 @@ namespace MoreMountains.CorgiEngine
         protected virtual void Start()
         {
             Initialization();
+
+
+            // By default, toggle OFF/sprint  OFF 
+            isToggleSprintActive = false;
+            isSprinting = false;
+
+            // 
+            sprintActiveImage.SetActive(false);
+            sprintInactiveImage.SetActive(true);
         }
 
         protected virtual void Initialization()
@@ -218,14 +227,15 @@ namespace MoreMountains.CorgiEngine
         protected virtual void InitializeButtons()
         {
             ButtonList = new List<MMInput.IMButton>();
-            ButtonList.Add(RunButton = new MMInput.IMButton(PlayerID, "Run", ToggleRunState, RunButtonPressed, RunButtonUp));
+            //old  ButtonList.Add(RunButton = new MMInput.IMButton(PlayerID, "Run", ToggleRunState, RunButtonPressed, RunButtonUp));
+            ButtonList.Add(RunButton = new MMInput.IMButton(PlayerID, "Run", ToggleRunState, RunButtonDownManual, RunButtonUpManual));
 
             ButtonList.Add(JumpButton = new MMInput.IMButton(PlayerID, "Jump", JumpButtonDown, JumpButtonPressed, JumpButtonUp));
             ButtonList.Add(SwimButton = new MMInput.IMButton(PlayerID, "Swim", SwimButtonDown, SwimButtonPressed, SwimButtonUp));
             ButtonList.Add(GlideButton = new MMInput.IMButton(PlayerID, "Glide", GlideButtonDown, GlideButtonPressed, GlideButtonUp));
             ButtonList.Add(InteractButton = new MMInput.IMButton(PlayerID, "Interact", InteractButtonDown, InteractButtonPressed, InteractButtonUp));
             ButtonList.Add(JetpackButton = new MMInput.IMButton(PlayerID, "Jetpack", JetpackButtonDown, JetpackButtonPressed, JetpackButtonUp));
-            ButtonList.Add(RunButton = new MMInput.IMButton(PlayerID, "Run", RunButtonDown, RunButtonPressed, RunButtonUp));
+           // ButtonList.Add(RunButton = new MMInput.IMButton(PlayerID, "Run", RunButtonDown, RunButtonPressed, RunButtonUp));
             ButtonList.Add(GripButton = new MMInput.IMButton(PlayerID, "Grip", GripButtonDown, GripButtonPressed, GripButtonUp));
             ButtonList.Add(DashButton = new MMInput.IMButton(PlayerID, "Dash", DashButtonDown, DashButtonPressed, DashButtonUp));
             ButtonList.Add(RollButton = new MMInput.IMButton(PlayerID, "Roll", RollButtonDown, RollButtonPressed, RollButtonUp));
@@ -303,40 +313,81 @@ namespace MoreMountains.CorgiEngine
         /// Called at LateUpdate(), this method processes the button states of all registered buttons
         /// </summary>
         /// 
+        // Toggle sprint status track
+        private bool isToggleSprintActive = false;
+
         public virtual void ToggleRunState()
         {
-            isSprinting = !isSprinting;  // ON/OFF toggle karna
+            isToggleSprintActive = !isToggleSprintActive;  // Toggle button status update
 
-            if (isSprinting)
+            if (isToggleSprintActive)
             {
-                RunButton.State.ChangeState(MMInput.ButtonStates.ButtonDown);
-                EnableRun();  // Run ON wali image dikhana
+                isSprinting = true;
+                EnableRun();  // Toggle ON → Sprint ON + Sprite Update
             }
             else
             {
-                RunButton.State.ChangeState(MMInput.ButtonStates.ButtonUp);
-                DisableRun();  // Run OFF wali image dikhana
+                isSprinting = false;
+                DisableRun();  // Toggle OFF → Sprint OFF + Sprite Update
             }
         }
 
+        // Sprint Enable  + Sprite Update 
         private void EnableRun()
         {
-            runOnImage.SetActive(true);  // Show "ON" image
-            runOffImage.SetActive(false);  // Hide "OFF" image
-            RunButton.State.ChangeState(MMInput.ButtonStates.ButtonDown);
+            sprintActiveImage.SetActive(true);   // Sprint ON 
+            sprintInactiveImage.SetActive(false); // Sprint OFF 
 
-            // Add sprint logic if needed (Example: setting a Corgi Engine state)
-            Debug.Log("Sprint Enabled!");
+            RunButton.State.ChangeState(MMInput.ButtonStates.ButtonDown);
+            Debug.Log("Sprint Activated!");
         }
 
-        private void DisableRun()
+        public void DisableRun()
         {
-            runOnImage.SetActive(false);   // Hide "ON" image
-            runOffImage.SetActive(true);  // Show "OFF" image
+            sprintActiveImage.SetActive(false);  // Sprint ON 
+            sprintInactiveImage.SetActive(true);  // Sprint OFF 
+
+            RunButton.State.ChangeState(MMInput.ButtonStates.ButtonUp);
+            Debug.Log("Sprint Deactivated!");
+        }
+
+
+
+        public virtual void RunButtonDownManual()
+        {
+            Debug.Log("Manual Sprint Button Pressed");
+
+            if (isToggleSprintActive)
+            {
+                Debug.Log("Toggle was ON, turning OFF now");
+                isToggleSprintActive = false;  // Toggle OFF
+                isSprinting = false;  // Sprint disable 
+                DisableRun();  // Sprint OFF n sprite update
+
+                // Toggle OFF sprite update
+                sprintActiveImage.SetActive(false);  // Toggle ON sprite hide 
+                sprintInactiveImage.SetActive(true); // Toggle OFF sprite show
+            }
+
+            Debug.Log("Enabling Manual Sprint");
+            isSprinting = true;  // Sprint enable here
+            EnableRun();
+        }
+
+
+
+        // Manual Sprint Release**
+        public virtual void RunButtonUpManual()
+        {
             RunButton.State.ChangeState(MMInput.ButtonStates.ButtonUp);
 
-            // Add sprint disable logic if needed
-            Debug.Log("Sprint Disabled!");
+            if (!isToggleSprintActive) 
+            {
+                isSprinting = false;
+                DisableRun();
+                sprintActiveImage.SetActive(false);  // Toggle ON sprite hide 
+                sprintInactiveImage.SetActive(true); // Toggle OFF sprite show
+            }
         }
 
 
@@ -567,7 +618,9 @@ namespace MoreMountains.CorgiEngine
 
         public virtual void RunButtonDown() { RunButton.State.ChangeState(MMInput.ButtonStates.ButtonDown); }
         public virtual void RunButtonPressed() { RunButton.State.ChangeState(MMInput.ButtonStates.ButtonPressed); }
-        public virtual void RunButtonUp() { RunButton.State.ChangeState(MMInput.ButtonStates.ButtonUp); }
+        public virtual void RunButtonUp() { RunButton.State.ChangeState(MMInput.ButtonStates.ButtonUp);
+        
+        }
 
         public virtual void JetpackButtonDown() { JetpackButton.State.ChangeState(MMInput.ButtonStates.ButtonDown); }
         public virtual void JetpackButtonPressed() { JetpackButton.State.ChangeState(MMInput.ButtonStates.ButtonPressed); }
